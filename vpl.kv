@@ -1,0 +1,34 @@
+
+RootWidget
+
+<RootWidget>:
+    ActionBar:
+        ActionView:
+            ActionPrevious:
+                title: "Cord"
+                with_previous: False
+            ActionButton:
+                text: "Execute"
+                on_press: root.code_area.exec_block()
+            ActionButton:
+                text: "If"
+                on_press: root.code_area.set_block(1)
+            ActionButton:
+                text: "Print"
+                on_press: root.code_area.set_block(0)
+            ActionButton:
+                text: "Elem"
+                on_press: root.code_area.set_block(2)
+
+    TextInput:
+        id: ti_code
+        size_hint_x: 0.3
+        size_hint_y: 1.0
+
+    TextInput:
+        id: ti_exec
+        size_hint_x: 0.3
+        size_hint_y: 0.3
+
+<CodeArea>:
+    size_hint_x: 0.7
