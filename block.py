@@ -23,13 +23,9 @@ class Block(Widget):
 
         self.next_block = None  # 次に実行するブロック
         self.back_block = None  # 前に実行したブロック
+
         self.block_start = None  # ブロックの始点座標
         self.block_end = None  # Block の終点座標 = 次の Block が繋がる座標
-
-        self.next_elem = None  # 次の要素のブロック
-        self.elem_end = None  # 要素の接続する始点
-        self.next_nest = None  # 次の入れ子のブロック
-        self.nest_end = None  # 入れ子の接続する始点
 
         self.is_variable = False
         self.is_elem = False
@@ -37,7 +33,7 @@ class Block(Widget):
         self.has_nest = False
 
         self.is_touched = False  # Block が mouse click されているか
-        self.mouse_start = None  # mouse drag の始点
+        self.mouse_start_point = None  # mouse drag の始点
 
     def move(self, dx, dy):
         block = self
@@ -66,15 +62,15 @@ class Block(Widget):
             if touch.button == "left" and self.is_in_block(touch) and Block.can_touch:
                 self.is_touched = True
                 Block.can_touch = False
-                self.mouse_start = touch.pos
+                self.mouse_start_point = touch.pos
 
         return super(Block, self).on_touch_down(touch)
 
     def on_touch_move(self, touch):
         if self.is_touched:
-            dx, dy = self.mouse_start[0] - touch.pos[0], self.mouse_start[1] - touch.pos[1]
+            dx, dy = self.mouse_start_point[0] - touch.pos[0], self.mouse_start_point[1] - touch.pos[1]
             self.move(dx, dy)
-            self.mouse_start = touch.pos
+            self.mouse_start_point = touch.pos
 
         return super(Block, self).on_touch_move(touch)
 
@@ -95,30 +91,6 @@ class Block(Widget):
 
         dx = self.block_end[0] - block2.block_start[0]
         dy = self.block_end[1] - block2.block_start[1]
-        d = dx * dx + dy * dy
-        if d < 20 * 20:
-            return True
-        else:
-            return False
-
-    def can_connect_elem(self, block2):
-        if not self.is_elem:
-            return False
-
-        dx = self.elem_end[0] - block2.block_start[0]
-        dy = self.elem_end[1] - block2.block_start[1]
-        d = dx * dx + dy * dy
-        if d < 20 * 20:
-            return True
-        else:
-            return False
-
-    def can_connect_nest(self, block2):
-        if not self.has_nest:
-            return False
-
-        dx = self.nest_end[0] - block2.block_start[0]
-        dy = self.nest_end[1] - block2.block_start[1]
         d = dx * dx + dy * dy
         if d < 20 * 20:
             return True
