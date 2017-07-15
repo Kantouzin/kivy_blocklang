@@ -216,11 +216,10 @@ class IfBlock(NestBlock):
         self.block_nest_end = [x + 20, y - 130]
 
 
-class PrintBlock(Block):
+class PrintBlock(FunctionBlock):
     def __init__(self):
         super(PrintBlock, self).__init__()
         self.code = "print"
-        # self.text_input = None
         self.value = "\"Hello, world !\""
 
     def draw(self, x, y):
