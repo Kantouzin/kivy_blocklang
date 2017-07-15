@@ -53,7 +53,7 @@ class Block(Widget):
     def is_in_block(self, touch):
         for component in self.components:
             if (component.pos[0] <= touch.pos[0] <= component.pos[0] + component.size[0]
-                and component.pos[1] <= touch.pos[1] <= component.pos[1] + component.size[1]):
+                    and component.pos[1] <= touch.pos[1] <= component.pos[1] + component.size[1]):
                 return True
         return False
 
@@ -132,7 +132,6 @@ class ElemBlock(Block):
         self.components.append(self.text_input)
 
     def on_enter(self, text_input):
-        self.value = text_input.text
         self.code = text_input.text
 
 
@@ -261,4 +260,3 @@ class PrintBlock(Block):
 
     def on_enter(self, text_input):
         self.value = text_input.text
-        # print(self.value)

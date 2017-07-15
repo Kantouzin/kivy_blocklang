@@ -28,7 +28,6 @@ class CodeArea(Widget):
     def on_touch_down(self, touch):
         if "button" in touch.profile:
             if touch.button == "right":
-                # new_block = TestBlock(touch.pos[0], touch.pos[1])
                 new_block = self.select_block()
                 new_block.draw(touch.pos[0], touch.pos[1])
                 self.codes.append(new_block)
@@ -86,7 +85,7 @@ class CodeArea(Widget):
             exec_script += "\n"
 
             head = head.next_block
-        # print(exec_script)
+
         self.parent_widget.ids["ti_code"].text = exec_script
         try:
             exec(exec_script)
