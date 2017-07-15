@@ -17,15 +17,15 @@ class Block(Widget):
     def __init__(self):
         super(Block, self).__init__()
 
-        self.code = None  # 実行する Python コード
-        self.components = []  # Block の持つ Widget 要素
+        self.code = ""              # 実行する Python コード
+        self.components = []        # Block の持つ Widget 要素
         self.indent = 0
 
-        self.next_block = None  # 次に実行するブロック
-        self.back_block = None  # 前に実行したブロック
+        self.next_block = None      # 次に実行するブロック
+        self.back_block = None      # 前に実行したブロック
 
-        self.block_start = None  # ブロックの始点座標
-        self.block_end = None  # Block の終点座標 = 次の Block が繋がる座標
+        self.block_start = None     # ブロックの始点座標
+        self.block_end = None       # Block の終点座標 = 次の Block が繋がる座標
 
         self.is_function_block = False
         self.is_variable_block = False
@@ -98,15 +98,50 @@ class Block(Widget):
             return False
 
 
+class FunctionBlock(Block):
+    __metaclass__ = ABCMeta
+
+    def __init__(self):
+        super(FunctionBlock, self).__init__()
+        self.is_function_block = True
+
+    @abstractmethod
+    def draw(self, x, y):
+        return NotImplementedError()
+
+
 class VariableBlock(Block):
     def __init__(self):
         super(VariableBlock, self).__init__()
+        self.is_variable_block = True
+
+    def draw(self, x, y):
+        with self.canvas:
+            Color(0, 0, 1)  # 枠線 (青)
+            self.components.append(
+                Rectangle(pos=(x, y), size=(100, 50))
+            )
+            Color(1, 1, 1)  # 本体 (白)
+            self.components.append(
+                Rectangle(pos=(x + 3, y + 3), size=(100 - 6, 50 - 6))
+            )
+
+        self.block_start = [x, y + 50]
+        self.block_end = [x, y]
+
+        text_input = TextInput(text=self.value, multiline=False)
+        text_input.pos = (x + 10, y + 10)
+        text_input.size = (100 - 20, 50 - 20)
+        text_input.bind(on_text_validate=self.on_enter)
+
+        self.add_widget(text_input)
+        self.components.append(text_input)
 
 
 class ElemBlock(Block):
     def __init__(self):
         super(ElemBlock, self).__init__()
-        self.text_input = None
+        self.is_elem_block = True
 
     def draw(self, x, y):
         with self.canvas:
@@ -122,74 +157,36 @@ class ElemBlock(Block):
         self.block_start = [x, y + 50]
         self.block_end = [x, y]
 
-        self.text_input = TextInput(text=self.value, multiline=False)
-        self.text_input.pos = (x + 10, y + 10)
-        self.text_input.size = (100 - 20, 50 - 20)
+        text_input = TextInput(text=self.code, multiline=False)
+        text_input.pos = (x + 10, y + 10)
+        text_input.size = (100 - 20, 50 - 20)
+        text_input.bind(on_text_validate=self.on_enter)
 
-        self.text_input.bind(on_text_validate=self.on_enter)
-
-        self.add_widget(self.text_input)
-        self.components.append(self.text_input)
+        self.add_widget(text_input)
+        self.components.append(text_input)
 
     def on_enter(self, text_input):
+        print(text_input)
         self.code = text_input.text
 
 
 class NestBlock(Block):
+    __metaclass__ = ABCMeta
+
     def __init__(self):
         super(NestBlock, self).__init__()
-        self.text_input = None
+        self.is_nest_block = True
         self.block_nest_end = None
 
+    @abstractmethod
     def draw(self, x, y):
-        with self.canvas:
-            Color(0, 0, 1)
-            self.components.append(
-                Rectangle(pos=(x, y - 50), size=(150, 50))
-            )
-            self.components.append(
-                Rectangle(pos=(x, y - 80), size=(20, 50))
-            )
-            self.components.append(
-                Rectangle(pos=(x, y - 100), size=(150, 20))
-            )
-            Color(1, 1, 1)
-            self.components.append(
-                Rectangle(pos=(x + 3, y - 50 + 3), size=(150 - 3 * 2, 50 - 3 * 2))
-            )
-            self.components.append(
-                Rectangle(pos=(x + 3, y - 80 - 3), size=(20 - 3 * 2, 50 + 3))
-            )
-            self.components.append(
-                Rectangle(pos=(x + 3, y - 100 + 3), size=(150 - 3 * 2, 20 - 3 * 2))
-            )
-
-        self.block_start = [x, y]
-        self.block_end = [x, y - 100]
-
-        self.text_input = TextInput(text="TEST", multiline=False)
-        self.text_input.pos = (x + 10, y - 10 - 30)
-        self.text_input.size = (150 - 10 * 2, 50 - 10 * 2)
-
-        self.text_input.bind(on_text_validate=self.on_enter)
-
-        self.add_widget(self.text_input)
-        self.components.append(self.text_input)
-
-    def on_enter(self, text_input):
-        self.code = text_input.text
-        print(self.value)
+        return NotImplementedError()
 
 
 class IfBlock(NestBlock):
     def __init__(self):
         super(IfBlock, self).__init__()
         self.code = "if"
-        self.text_input = None
-
-    def on_enter(self, text_input):
-        self.code = text_input.text
-        print(self.value)
 
     def draw(self, x, y):
         with self.canvas:
@@ -218,21 +215,12 @@ class IfBlock(NestBlock):
         self.block_end = [x, y - 100]
         self.block_nest_end = [x + 20, y - 130]
 
-        self.text_input = TextInput(text="True", multiline=False)
-        self.text_input.pos = (x + 10, y - 10 - 30)
-        self.text_input.size = (150 - 10 * 2, 50 - 10 * 2)
-
-        self.text_input.bind(on_text_validate=self.on_enter)
-
-        self.add_widget(self.text_input)
-        self.components.append(self.text_input)
-
 
 class PrintBlock(Block):
     def __init__(self):
         super(PrintBlock, self).__init__()
         self.code = "print"
-        self.text_input = None
+        # self.text_input = None
         self.value = "\"Hello, world !\""
 
     def draw(self, x, y):
@@ -249,14 +237,13 @@ class PrintBlock(Block):
         self.block_start = [x, y + 50]
         self.block_end = [x, y]
 
-        self.text_input = TextInput(text=self.value, multiline=False)
-        self.text_input.pos = (x + 10, y + 10)
-        self.text_input.size = (100 - 20, 50 - 20)
+        text_input = TextInput(text=self.value, multiline=False)
+        text_input.pos = (x + 10, y + 10)
+        text_input.size = (100 - 20, 50 - 20)
+        text_input.bind(on_text_validate=self.on_enter)
 
-        self.text_input.bind(on_text_validate=self.on_enter)
-
-        self.add_widget(self.text_input)
-        self.components.append(self.text_input)
+        self.add_widget(text_input)
+        self.components.append(text_input)
 
     def on_enter(self, text_input):
         self.value = text_input.text
