@@ -62,22 +62,6 @@ class CodeArea(Widget):
                         block1.next_block = block2
                         block2.back_block = block1
 
-                        # if block1.can_connect_elem(block2):
-                        #     dx = block2.block_start[0] - block1.elem_end[0]
-                        #     dy = block2.block_start[0] - block1.elem_end[1]
-                        #
-                        #     block2.move(dx, dy)
-                        #     block1.next_elem = block2
-                        #     block2.back_block = block1
-                        #
-                        # if block1.can_connect_nest(block2):
-                        #     dx = block2.block_start[0] - block1.nest_end[0]
-                        #     dy = block2.block_start[1] - block1.nest_end[1]
-                        #
-                        #     block2.move(dx, dy)
-                        #     block1.next_nest = block2
-                        #     block2.back_block = block1
-
     def exec_block(self):
         head = None
         count = 0
@@ -97,7 +81,7 @@ class CodeArea(Widget):
             if head.value is not None:
                 exec_script += head.value
             exec_script += ")"
-            if head.has_nest:
+            if head.is_nest_block:
                 exec_script += ":"
             exec_script += "\n"
 

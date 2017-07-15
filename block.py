@@ -27,10 +27,10 @@ class Block(Widget):
         self.block_start = None  # ブロックの始点座標
         self.block_end = None  # Block の終点座標 = 次の Block が繋がる座標
 
-        self.is_variable = False
-        self.is_elem = False
-        self.has_elem = False
-        self.has_nest = False
+        self.is_function_block = False
+        self.is_variable_block = False
+        self.is_elem_block = False
+        self.is_nest_block = False
 
         self.is_touched = False  # Block が mouse click されているか
         self.mouse_start_point = None  # mouse drag の始点
@@ -106,10 +106,7 @@ class VariableBlock(Block):
 class ElemBlock(Block):
     def __init__(self):
         super(ElemBlock, self).__init__()
-        self.value = ""
         self.text_input = None
-
-        self.code = ""
 
     def draw(self, x, y):
         with self.canvas:
@@ -136,19 +133,14 @@ class ElemBlock(Block):
 
     def on_enter(self, text_input):
         self.value = text_input.text
-        # print(self.value)
         self.code = text_input.text
 
 
 class NestBlock(Block):
     def __init__(self):
         super(NestBlock, self).__init__()
-        self.code = None
-        self.value = None
         self.text_input = None
-
         self.block_nest_end = None
-        self.has_nest = True
 
     def draw(self, x, y):
         with self.canvas:
@@ -186,7 +178,7 @@ class NestBlock(Block):
         self.components.append(self.text_input)
 
     def on_enter(self, text_input):
-        self.value = text_input.text
+        self.code = text_input.text
         print(self.value)
 
 
@@ -197,7 +189,7 @@ class IfBlock(NestBlock):
         self.text_input = None
 
     def on_enter(self, text_input):
-        self.value = text_input.text
+        self.code = text_input.text
         print(self.value)
 
     def draw(self, x, y):
