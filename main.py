@@ -73,18 +73,19 @@ class CodeArea(Widget):
 
         exec_script = ""
         while head is not None:
-            exec_script += "    " * head.indent
-            
-            if head.is_function_block:
+            exec_script += "    " * head.indent     # インデントの挿入
+
+            if head.is_function_block:              # 関数ブロック
                 exec_script += head.code
                 exec_script += "("
-                exec_script += head.value
+                if head.value is not None:
+                    exec_script += head.value
                 exec_script += ")\n"
-            elif head.is_variable_block:
+            elif head.is_variable_block:            # 変数宣言ブロック
                 pass
-            elif head.is_elem_block:
+            elif head.is_elem_block:                # 要素ブロック
                 pass
-            elif head.is_nest_block:
+            elif head.is_nest_block:                # 入れ子ブロック
                 exec_script += head.code
                 exec_script += "("
                 exec_script += "):\n"
@@ -108,8 +109,8 @@ class RootWidget(FloatLayout):
     def __init__(self, **kwargs):
         super(RootWidget, self).__init__(**kwargs)
 
-        self.code_area = CodeArea(self)
-        self.add_widget(self.code_area)
+        # self.code_area = CodeArea(self)
+        # self.add_widget(self.code_area)
 
 
 class VPLApp(App):

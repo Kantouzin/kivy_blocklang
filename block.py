@@ -3,8 +3,6 @@ from abc import ABCMeta, abstractmethod
 from kivy.uix.widget import Widget
 from kivy.uix.textinput import TextInput
 from kivy.graphics import Color, Rectangle
-
-# ?
 from kivy.config import Config
 
 Config.set('input', 'mouse', 'mouse,multitouch_on_demand')
