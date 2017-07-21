@@ -73,29 +73,31 @@ class CodeArea(Widget):
 
         exec_script = ""
         while head is not None:
-            exec_script += "    " * head.indent
-            exec_script += head.code
+            exec_script += "    " * head.indent     # インデントの挿入
 
-            exec_script += "("
-            if head.value is not None:
-                exec_script += head.value
-            exec_script += ")"
-            if head.is_nest_block:
-                exec_script += ":"
-            exec_script += "\n"
+            if head.is_function_block:              # 関数ブロック
+                exec_script += head.code
+                exec_script += "("
+                if head.value is not None:
+                    exec_script += head.value
+                exec_script += ")\n"
+            elif head.is_variable_block:            # 変数宣言ブロック
+                pass
+            elif head.is_elem_block:                # 要素ブロック
+                pass
+            elif head.is_nest_block:                # 入れ子ブロック
+                exec_script += head.code
+                exec_script += "("
+                exec_script += "):\n"
 
             head = head.next_block
 
         self.parent_widget.ids["ti_code"].text = exec_script
+
         try:
             exec(exec_script)
         except:
             print("ERROR")
-
-
-class SelectBlockBar:
-    def __init__(self):
-        pass
 
 
 class RootWidget(FloatLayout):
