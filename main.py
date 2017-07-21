@@ -100,17 +100,12 @@ class CodeArea(Widget):
             print("ERROR")
 
 
-class SelectBlockBar:
-    def __init__(self):
-        pass
-
-
 class RootWidget(FloatLayout):
     def __init__(self, **kwargs):
         super(RootWidget, self).__init__(**kwargs)
 
-        # self.code_area = CodeArea(self)
-        # self.add_widget(self.code_area)
+        self.code_area = CodeArea(self)
+        self.add_widget(self.code_area)
 
 
 class VPLApp(App):

@@ -2,19 +2,24 @@
 RootWidget
 
 <RootWidget>:
+    #code_area: code_area
+
     BoxLayout:
         orientation: "horizontal"
 
         BoxLayout:
             orientation: "vertical"
-
             size_hint_x: 0.65
+
+            #CodeArea:
+            #    id: code_area
 
             ActionBar:
                 ActionView:
                     ActionPrevious:
                         title: "Cord"
                         with_previous: False
+
                     ActionButton:
                         text: "Execute"
                         on_press: root.code_area.exec_block()
@@ -30,14 +35,15 @@ RootWidget
 
         BoxLayout:
             orientation: "vertical"
-
             size_hint_x: 0.35
 
-            TextInput:
+            CodeInput:
                 id: ti_code
                 size_hint_y: 0.7
 
             TextInput:
                 id: ti_exec
                 size_hint_y: 0.3
+
+
 
