@@ -2,7 +2,6 @@
 RootWidget
 
 <RootWidget>:
-    #code_area: code_area
 
     BoxLayout:
         orientation: "horizontal"
@@ -11,24 +10,31 @@ RootWidget
             orientation: "vertical"
             size_hint_x: 0.65
 
-            #CodeArea:
-            #    id: code_area
-
             ActionBar:
                 ActionView:
                     ActionPrevious:
                         title: "Cord"
                         with_previous: False
+                    ActionOverflow:
 
                     ActionButton:
                         text: "Execute"
                         on_press: root.code_area.exec_block()
-                    ActionButton:
-                        text: "If"
-                        on_press: root.code_area.set_block(1)
-                    ActionButton:
-                        text: "Print"
-                        on_press: root.code_area.set_block(0)
+
+                    ActionGroup:
+                        mode: "spinner"
+                        text: "Nest"
+                        ActionButton:
+                            text: "If"
+                            on_press: root.code_area.set_block(1)
+
+                    ActionGroup:
+                        mode: "spinner"
+                        text: "Function"
+                        ActionButton:
+                            text: "Print"
+                            on_press: root.code_area.set_block(0)
+
                     ActionButton:
                         text: "Elem"
                         on_press: root.code_area.set_block(2)

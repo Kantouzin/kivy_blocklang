@@ -22,8 +22,8 @@ class Block(Widget):
         self.next_block = None      # 次に実行するブロック
         self.back_block = None      # 前に実行したブロック
 
-        self.block_start = None     # ブロックの始点座標
-        self.block_end = None       # Block の終点座標 = 次の Block が繋がる座標
+        self.block_start_point = None     # ブロックの始点座標
+        self.block_end_point = None       # Block の終点座標 = 次の Block が繋がる座標
 
         self.is_function_block = False
         self.is_variable_block = False
@@ -41,10 +41,10 @@ class Block(Widget):
                 y = component.pos[1] - dy
                 component.pos = (x, y)
 
-            block.block_start[0] -= dx
-            block.block_start[1] -= dy
-            block.block_end[0] -= dx
-            block.block_end[1] -= dy
+            block.block_start_point[0] -= dx
+            block.block_start_point[1] -= dy
+            block.block_end_point[0] -= dx
+            block.block_end_point[1] -= dy
 
             block = block.next_block
 
@@ -87,8 +87,8 @@ class Block(Widget):
         if self.next_block is not None:
             return False
 
-        dx = self.block_end[0] - block2.block_start[0]
-        dy = self.block_end[1] - block2.block_start[1]
+        dx = self.block_end_point[0] - block2.block_start[0]
+        dy = self.block_end_point[1] - block2.block_start[1]
         d = dx * dx + dy * dy
         if d < 20 * 20:
             return True
@@ -124,8 +124,8 @@ class VariableBlock(Block):
                 Rectangle(pos=(x + 3, y + 3), size=(100 - 6, 50 - 6))
             )
 
-        self.block_start = [x, y + 50]
-        self.block_end = [x, y]
+        self.block_start_point = [x, y + 50]
+        self.block_end_point = [x, y]
 
         text_input = TextInput(text=self.value, multiline=False)
         text_input.pos = (x + 10, y + 10)
@@ -152,8 +152,8 @@ class ElemBlock(Block):
                 Rectangle(pos=(x + 3, y + 3), size=(100 - 6, 50 - 6))
             )
 
-        self.block_start = [x, y + 50]
-        self.block_end = [x, y]
+        self.block_start_point = [x, y + 50]
+        self.block_end_point = [x, y]
 
         text_input = TextInput(text=self.code, multiline=False)
         text_input.pos = (x + 10, y + 10)
@@ -209,8 +209,8 @@ class IfBlock(NestBlock):
                 Rectangle(pos=(x + 3, y - 100 + 3), size=(150 - 3 * 2, 20 - 3 * 2))
             )
 
-        self.block_start = [x, y]
-        self.block_end = [x, y - 100]
+        self.block_start_point = [x, y]
+        self.block_end_point = [x, y - 100]
         self.block_nest_end = [x + 20, y - 130]
 
 
@@ -231,8 +231,8 @@ class PrintBlock(FunctionBlock):
                 Rectangle(pos=(x + 3, y + 3), size=(100 - 6, 50 - 6))
             )
 
-        self.block_start = [x, y + 50]
-        self.block_end = [x, y]
+        self.block_start_point = [x, y + 50]
+        self.block_end_point = [x, y]
 
         text_input = TextInput(text=self.value, multiline=False)
         text_input.pos = (x + 10, y + 10)
