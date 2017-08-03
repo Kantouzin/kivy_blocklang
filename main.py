@@ -1,5 +1,5 @@
 
-from block import ElemBlock, IfBlock, PrintBlock
+from block import ElemBlock, IfBlock, EndBlock, PrintBlock, VariableBlock
 from kivy.app import App
 from kivy.uix.widget import Widget
 from kivy.uix.floatlayout import FloatLayout
@@ -24,6 +24,10 @@ class CodeArea(Widget):
             self.select_block = IfBlock
         elif n == 2:
             self.select_block = ElemBlock
+        elif n == 3:
+            self.select_block = EndBlock
+        elif n == 4:
+            self.select_block = VariableBlock
 
     def on_touch_down(self, touch):
         if "button" in touch.profile:
@@ -47,18 +51,31 @@ class CodeArea(Widget):
         for block in self.codes:
             block.next_block = None
             block.back_block = None
-            block.nest_block = None
+
+            if block.is_function_block or block.is_nest_block:
+                block.elem_block = None
 
         # 接続の判定
         for block1 in self.codes:
             for block2 in self.codes:
-                if block1 != block2:
-                    if block1.can_connect_next(block2):
-                        dx = block2.block_start[0] - block1.block_end[0]
-                        dy = block2.block_start[1] - block1.block_end[1]
+                if block1 == block2:
+                    continue
+
+                if block1.can_connect_next(block2):
+                    dx = block2.block_start_point[0] - block1.block_end_point[0]
+                    dy = block2.block_start_point[1] - block1.block_end_point[1]
+
+                    block2.move(dx, dy)
+                    block1.next_block = block2
+                    block2.back_block = block1
+
+                if (block1.is_function_block or block1.is_nest_block) and block2.is_elem_block:
+                    if block1.can_connect_elem(block2):
+                        dx = block2.block_start_point[0] - block1.elem_end_point[0]
+                        dy = block2.block_start_point[1] - block1.elem_end_point[1]
 
                         block2.move(dx, dy)
-                        block1.next_block = block2
+                        block1.elem_block = block2
                         block2.back_block = block1
 
     def exec_block(self):
@@ -72,23 +89,28 @@ class CodeArea(Widget):
             return
 
         exec_script = ""
+        indent = 0
         while head is not None:
-            exec_script += "    " * head.indent     # インデントの挿入
-
             if head.is_function_block:              # 関数ブロック
+                exec_script += "    " * indent
                 exec_script += head.code
                 exec_script += "("
-                if head.value is not None:
-                    exec_script += head.value
+                if head.elem_block is not None:
+                    exec_script += head.elem_block.code
                 exec_script += ")\n"
             elif head.is_variable_block:            # 変数宣言ブロック
-                pass
-            elif head.is_elem_block:                # 要素ブロック
-                pass
+                exec_script += "    " * indent
+                exec_script += head.code1 + " = " + head.code2 + "\n"
             elif head.is_nest_block:                # 入れ子ブロック
+                exec_script += "    " * indent
                 exec_script += head.code
                 exec_script += "("
+                if head.elem_block is not None:
+                    exec_script += head.elem_block.code
                 exec_script += "):\n"
+                indent += 1
+            elif head.is_end_block:
+                indent -= 1
 
             head = head.next_block
 
@@ -96,8 +118,8 @@ class CodeArea(Widget):
 
         try:
             exec(exec_script)
-        except:
-            print("ERROR")
+        except Exception as error:
+            print(error)
 
 
 class RootWidget(FloatLayout):
@@ -112,7 +134,6 @@ class VPLApp(App):
     def __init__(self):
         super(VPLApp, self).__init__()
         self.title = "Visual Programming Language"
-
 
 if __name__ == "__main__":
     VPLApp().run()
