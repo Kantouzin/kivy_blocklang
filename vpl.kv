@@ -1,59 +1,57 @@
 
-RootWidget
+<CodeArea>:
+    id: code_area
+
+    ActionBar:
+        ActionView:
+            ActionPrevious:
+                title: "Cord"
+                with_previous: False
+            ActionOverflow:
+
+            ActionButton:
+                text: "Execute"
+                on_press: code_area.exec_block()
+
+            ActionGroup:
+                mode: "spinner"
+                text: "Nest"
+                ActionButton:
+                    text: "If"
+                    on_press: code_area.set_block("if")
+                ActionButton:
+                    text: "End"
+                    on_press: code_area.set_block("end")
+
+            ActionGroup:
+                mode: "spinner"
+                text: "Function"
+                ActionButton:
+                    text: "Print"
+                    on_press: code_area.set_block("print")
+
+            ActionButton:
+                text: "Elem"
+                on_press: code_area.set_block("elem")
+
+            ActionButton:
+                text: "Variable"
+                on_press: code_area.set_block("variable")
 
 <RootWidget>:
+    orientation: "horizontal"
+
+    CodeArea:
+        size_hint_x: 0.65
 
     BoxLayout:
-        orientation: "horizontal"
+        orientation: "vertical"
+        size_hint_x: 0.35
 
-        BoxLayout:
-            orientation: "vertical"
-            size_hint_x: 0.65
+        CodeInput:
+            id: ti_code
+            size_hint_y: 0.7
 
-            ActionBar:
-                ActionView:
-                    ActionPrevious:
-                        title: "Cord"
-                        with_previous: False
-                    ActionOverflow:
-
-                    ActionButton:
-                        text: "Execute"
-                        on_press: root.code_area.exec_block()
-
-                    ActionGroup:
-                        mode: "spinner"
-                        text: "Nest"
-                        ActionButton:
-                            text: "If"
-                            on_press: root.code_area.set_block(1)
-                        ActionButton:
-                            text: "End"
-                            on_press: root.code_area.set_block(3)
-
-                    ActionGroup:
-                        mode: "spinner"
-                        text: "Function"
-                        ActionButton:
-                            text: "Print"
-                            on_press: root.code_area.set_block(0)
-
-                    ActionButton:
-                        text: "Elem"
-                        on_press: root.code_area.set_block(2)
-
-                    ActionButton:
-                        text: "Variable"
-                        on_press: root.code_area.set_block(4)
-
-        BoxLayout:
-            orientation: "vertical"
-            size_hint_x: 0.35
-
-            CodeInput:
-                id: ti_code
-                size_hint_y: 0.7
-
-#            TextInput:
-#                id: ti_exec
-#                size_hint_y: 0.3
+#        TextInput:
+#            id: ti_exec
+#            size_hint_y: 0.3

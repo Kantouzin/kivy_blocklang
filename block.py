@@ -18,7 +18,6 @@ class Block(Widget):
 
         self.code = ""                  # 実行する Python コード
         self.components = []            # Block の持つ Widget 要素
-        self.indent = 0
 
         self.next_block = None          # 次に実行するブロック
         self.back_block = None          # 前に実行したブロック
@@ -347,3 +346,10 @@ class PrintBlock(FunctionBlock):
         label.size = (length*2 - 20, length - 20)
         self.add_widget(label)
         self.components.append(label)
+
+class ObjectBlock(Block):
+    def __init__(self):
+        super(ObjectBlock, self).__init__()
+        self.code = "obj"
+
+    def draw(self, x, y):

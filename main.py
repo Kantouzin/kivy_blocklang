@@ -2,31 +2,30 @@
 from block import ElemBlock, IfBlock, EndBlock, PrintBlock, VariableBlock
 from kivy.app import App
 from kivy.uix.widget import Widget
-from kivy.uix.floatlayout import FloatLayout
+from kivy.uix.boxlayout import BoxLayout
 from kivy.config import Config
 
 Config.set('input', 'mouse', 'mouse,multitouch_on_demand')
 
 
-class CodeArea(Widget):
-    def __init__(self, parent_widget):
-        super(CodeArea, self).__init__()
+class CodeArea(BoxLayout):
+    def __init__(self, **kwargs):
+        super(CodeArea, self).__init__(**kwargs)
 
         self.codes = []
-        self.parent_widget = parent_widget
 
         self.select_block = PrintBlock
 
     def set_block(self, n):
-        if n == 0:
+        if n == "print":
             self.select_block = PrintBlock
-        elif n == 1:
+        elif n == "if":
             self.select_block = IfBlock
-        elif n == 2:
+        elif n == "elem":
             self.select_block = ElemBlock
-        elif n == 3:
+        elif n == "end":
             self.select_block = EndBlock
-        elif n == 4:
+        elif n == "variable":
             self.select_block = VariableBlock
 
     def on_touch_down(self, touch):
@@ -35,7 +34,7 @@ class CodeArea(Widget):
                 new_block = self.select_block()
                 new_block.draw(touch.pos[0], touch.pos[1])
                 self.codes.append(new_block)
-                self.parent_widget.add_widget(new_block)
+                self.add_widget(new_block)
 
         return super(CodeArea, self).on_touch_down(touch)
 
@@ -79,6 +78,8 @@ class CodeArea(Widget):
                         block2.back_block = block1
 
     def exec_block(self):
+        # すべてのブロックが接続されている
+        # = headがひとつのとき, 実行可能
         head = None
         count = 0
         for code in self.codes:
@@ -122,18 +123,18 @@ class CodeArea(Widget):
             print(error)
 
 
-class RootWidget(FloatLayout):
+class RootWidget(BoxLayout):
     def __init__(self, **kwargs):
         super(RootWidget, self).__init__(**kwargs)
-
-        self.code_area = CodeArea(self)
-        self.add_widget(self.code_area)
 
 
 class VPLApp(App):
     def __init__(self):
         super(VPLApp, self).__init__()
         self.title = "Visual Programming Language"
+
+    def build(self):
+        return RootWidget()
 
 if __name__ == "__main__":
     VPLApp().run()
