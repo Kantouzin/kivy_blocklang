@@ -1,14 +1,19 @@
 
-from block import ElemBlock, IfBlock, EndBlock, PrintBlock, VariableBlock
+from block import ElemBlock, IfBlock, EndBlock, PrintBlock, VariableBlock, ObjectBlock
 from kivy.app import App
 from kivy.uix.widget import Widget
 from kivy.uix.boxlayout import BoxLayout
 from kivy.config import Config
 
+from block import IfBlock_IREKO
+
+
 Config.set('input', 'mouse', 'mouse,multitouch_on_demand')
+Config.set('graphics', 'width', '900')
+Config.set('graphics', 'height', '600')
 
 
-class CodeArea(BoxLayout):
+class CodeArea(Widget):
     def __init__(self, **kwargs):
         super(CodeArea, self).__init__(**kwargs)
 
@@ -20,13 +25,16 @@ class CodeArea(BoxLayout):
         if n == "print":
             self.select_block = PrintBlock
         elif n == "if":
-            self.select_block = IfBlock
+            # self.select_block = IfBlock
+            self.select_block = IfBlock_IREKO
         elif n == "elem":
             self.select_block = ElemBlock
         elif n == "end":
             self.select_block = EndBlock
         elif n == "variable":
             self.select_block = VariableBlock
+        elif n == "object":
+            self.select_block = ObjectBlock
 
     def on_touch_down(self, touch):
         if "button" in touch.profile:
@@ -51,7 +59,7 @@ class CodeArea(BoxLayout):
             block.next_block = None
             block.back_block = None
 
-            if block.is_function_block or block.is_nest_block:
+            if block.is_function_block or block.is_nest_block or block.is_object_block:
                 block.elem_block = None
 
         # 接続の判定
@@ -68,7 +76,8 @@ class CodeArea(BoxLayout):
                     block1.next_block = block2
                     block2.back_block = block1
 
-                if (block1.is_function_block or block1.is_nest_block) and block2.is_elem_block:
+                if (block1.is_function_block or block1.is_nest_block or block1.is_object_block)\
+                        and block2.is_elem_block:
                     if block1.can_connect_elem(block2):
                         dx = block2.block_start_point[0] - block1.elem_end_point[0]
                         dy = block2.block_start_point[1] - block1.elem_end_point[1]
@@ -112,10 +121,16 @@ class CodeArea(BoxLayout):
                 indent += 1
             elif head.is_end_block:
                 indent -= 1
+            elif head.is_object_block:
+                exec_script += "    " * indent
+                exec_script += "class"
+                if head.elem_block is not None:
+                    exec_script += head.elem_block.code
+                exec_script += ":\n"
 
             head = head.next_block
 
-        self.parent_widget.ids["ti_code"].text = exec_script
+        self.parent.parent.ids["ti_code"].text = exec_script
 
         try:
             exec(exec_script)
