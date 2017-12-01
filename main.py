@@ -1,33 +1,40 @@
 
-from block import ElemBlock, IfBlock, EndBlock, PrintBlock, VariableBlock
+from block import ElemBlock, IfBlock, EndBlock, PrintBlock, VariableBlock, ObjectBlock
 from kivy.app import App
 from kivy.uix.widget import Widget
-from kivy.uix.floatlayout import FloatLayout
+from kivy.uix.boxlayout import BoxLayout
 from kivy.config import Config
 
+from block import IfBlock_IREKO
+
+
 Config.set('input', 'mouse', 'mouse,multitouch_on_demand')
+Config.set('graphics', 'width', '900')
+Config.set('graphics', 'height', '600')
 
 
 class CodeArea(Widget):
-    def __init__(self, parent_widget):
-        super(CodeArea, self).__init__()
+    def __init__(self, **kwargs):
+        super(CodeArea, self).__init__(**kwargs)
 
         self.codes = []
-        self.parent_widget = parent_widget
 
         self.select_block = PrintBlock
 
     def set_block(self, n):
-        if n == 0:
+        if n == "print":
             self.select_block = PrintBlock
-        elif n == 1:
-            self.select_block = IfBlock
-        elif n == 2:
+        elif n == "if":
+            # self.select_block = IfBlock
+            self.select_block = IfBlock_IREKO
+        elif n == "elem":
             self.select_block = ElemBlock
-        elif n == 3:
+        elif n == "end":
             self.select_block = EndBlock
-        elif n == 4:
+        elif n == "variable":
             self.select_block = VariableBlock
+        elif n == "object":
+            self.select_block = ObjectBlock
 
     def on_touch_down(self, touch):
         if "button" in touch.profile:
@@ -35,7 +42,7 @@ class CodeArea(Widget):
                 new_block = self.select_block()
                 new_block.draw(touch.pos[0], touch.pos[1])
                 self.codes.append(new_block)
-                self.parent_widget.add_widget(new_block)
+                self.add_widget(new_block)
 
         return super(CodeArea, self).on_touch_down(touch)
 
@@ -52,7 +59,7 @@ class CodeArea(Widget):
             block.next_block = None
             block.back_block = None
 
-            if block.is_function_block or block.is_nest_block:
+            if block.is_function_block or block.is_nest_block or block.is_object_block:
                 block.elem_block = None
 
         # 接続の判定
@@ -69,7 +76,8 @@ class CodeArea(Widget):
                     block1.next_block = block2
                     block2.back_block = block1
 
-                if (block1.is_function_block or block1.is_nest_block) and block2.is_elem_block:
+                if (block1.is_function_block or block1.is_nest_block or block1.is_object_block)\
+                        and block2.is_elem_block:
                     if block1.can_connect_elem(block2):
                         dx = block2.block_start_point[0] - block1.elem_end_point[0]
                         dy = block2.block_start_point[1] - block1.elem_end_point[1]
@@ -79,6 +87,8 @@ class CodeArea(Widget):
                         block2.back_block = block1
 
     def exec_block(self):
+        # すべてのブロックが接続されている
+        # = headがひとつのとき, 実行可能
         head = None
         count = 0
         for code in self.codes:
@@ -111,10 +121,16 @@ class CodeArea(Widget):
                 indent += 1
             elif head.is_end_block:
                 indent -= 1
+            elif head.is_object_block:
+                exec_script += "    " * indent
+                exec_script += "class"
+                if head.elem_block is not None:
+                    exec_script += head.elem_block.code
+                exec_script += ":\n"
 
             head = head.next_block
 
-        self.parent_widget.ids["ti_code"].text = exec_script
+        self.parent.parent.ids["ti_code"].text = exec_script
 
         try:
             exec(exec_script)
@@ -122,18 +138,18 @@ class CodeArea(Widget):
             print(error)
 
 
-class RootWidget(FloatLayout):
+class RootWidget(BoxLayout):
     def __init__(self, **kwargs):
         super(RootWidget, self).__init__(**kwargs)
-
-        self.code_area = CodeArea(self)
-        self.add_widget(self.code_area)
 
 
 class VPLApp(App):
     def __init__(self):
         super(VPLApp, self).__init__()
         self.title = "Visual Programming Language"
+
+    def build(self):
+        return RootWidget()
 
 if __name__ == "__main__":
     VPLApp().run()
