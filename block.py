@@ -475,7 +475,7 @@ class IfBlock_IREKO(NestBlock):
         codes += "    " * indent + "if "
 
         if self.elem_block is not None:
-            codes, indent = self.elem_block.make_code()
+            codes, indent = self.elem_block.make_code(codes, indent)
         else:
             # ここでerrorを起こすべきだが、まずはTrue
             codes += "True"
@@ -484,6 +484,10 @@ class IfBlock_IREKO(NestBlock):
 
         indent += 1
         # ここでif文中のcodeを実行
+        next_block = self.nest_block
+        while next_block is not None:
+            codes, indent = next_block.make_code(codes, indent)
+            next_block = next_block.next_block
         indent -= 1
 
         return codes, indent

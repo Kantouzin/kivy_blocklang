@@ -1,4 +1,9 @@
 
+import sys
+import io
+import traceback
+from contextlib import contextmanager
+
 from block import ArgumentBlock, IfBlock, EndBlock, PrintBlock, VariableBlock, ClassBlock, BlockStatus, IfBlock_IREKO
 from kivy.app import App
 from kivy.uix.widget import Widget
@@ -9,6 +14,14 @@ from kivy.config import Config
 Config.set('input', 'mouse', 'mouse,multitouch_on_demand')
 Config.set('graphics', 'width', '900')
 Config.set('graphics', 'height', '600')
+
+
+@contextmanager
+def stdoutIO():
+    old = sys.stdout
+    sys.stdout = io.StringIO()
+    yield sys.stdout
+    sys.stdout = old
 
 
 class CodeArea(Widget):
@@ -140,10 +153,15 @@ class CodeArea(Widget):
 
         self.parent.parent.ids["ti_code"].text = exec_script
 
-        try:
-            exec(exec_script)
-        except Exception as error:
-            print(error)
+        with stdoutIO() as stdout_string:
+            error = ""
+            try:
+                exec(exec_script)
+            except:
+                error = traceback.format_exc()
+            finally:
+                result = stdout_string.getvalue() + error
+                self.parent.parent.ids["ti_exec"].text = result
 
 
 class RootWidget(BoxLayout):
