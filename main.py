@@ -4,7 +4,7 @@ import io
 import traceback
 from contextlib import contextmanager
 
-from block import ArgumentBlock, IfBlock, EndBlock, PrintBlock, VariableBlock, ClassBlock, BlockStatus, IfBlock_IREKO
+from block import ArgumentBlock, IfBlock, PrintBlock, VariableBlock, ClassBlock, BlockStatus
 from kivy.app import App
 from kivy.uix.widget import Widget
 from kivy.uix.boxlayout import BoxLayout
@@ -36,12 +36,9 @@ class CodeArea(Widget):
         if n == "print":
             self.select_block = PrintBlock
         elif n == "if":
-            # self.select_block = IfBlock
-            self.select_block = IfBlock_IREKO
+            self.select_block = IfBlock
         elif n == "elem":
             self.select_block = ArgumentBlock
-        elif n == "end":
-            self.select_block = EndBlock
         elif n == "variable":
             self.select_block = VariableBlock
         elif n == "object":
@@ -122,32 +119,6 @@ class CodeArea(Widget):
         exec_script = ""
         indent = 0
         while head is not None:
-            # if head.status == BlockStatus.Function:              # 関数ブロック
-            #     exec_script += "    " * indent
-            #     exec_script += head.code
-            #     exec_script += "("
-            #     if head.elem_block is not None:
-            #         exec_script += head.elem_block.code
-            #     exec_script += ")\n"
-            # elif head.is_variable_block:            # 変数宣言ブロック
-            #     exec_script += "    " * indent
-            #     exec_script += head.code1 + " = " + head.code2 + "\n"
-            # elif head.is_nest_block:                # 入れ子ブロック
-            #     exec_script += "    " * indent
-            #     exec_script += head.code
-            #     exec_script += "("
-            #     if head.elem_block is not None:
-            #         exec_script += head.elem_block.code
-            #     exec_script += "):\n"
-            #     indent += 1
-            # elif head.is_end_block:
-            #     indent -= 1
-            # elif head.is_object_block:
-            #     exec_script += "    " * indent
-            #     exec_script += "class"
-            #     if head.elem_block is not None:
-            #         exec_script += head.elem_block.code
-            #     exec_script += ":\n"
             exec_script, indent = head.make_code(exec_script, indent)
             head = head.next_block
 

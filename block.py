@@ -435,39 +435,6 @@ class IfBlock(NestBlock):
         super(IfBlock, self).__init__()
         self.code = "if"
 
-    def draw(self, x, y):
-        length = 50
-        frame_width = 3
-
-        with self.canvas:
-            Color(0, 0, 1)  # 枠線 (青)
-            self.components.append(
-                Rectangle(pos=(x, y - length), size=(length*2, length))
-            )
-            Color(1, 1, 1)  # 本体 (白)
-            self.components.append(
-                Rectangle(pos=(x + frame_width, y - length + frame_width),
-                          size=(length*2 - frame_width*2, length - frame_width*2)
-                          )
-            )
-
-        self.block_start_point = [x, y]
-        self.block_end_point = [x, y - length]
-        self.elem_end_point = [x + length*2, y]
-
-        label = Label(text="If")
-        label.color = (0, 0, 0, 1)
-        label.pos = (x + 10, y - length + 10)
-        label.size = (length*2 - 20, length - 20)
-        self.add_widget(label)
-        self.components.append(label)
-
-
-class IfBlock_IREKO(NestBlock):
-    def __init__(self):
-        super(IfBlock_IREKO, self).__init__()
-        self.code = "if"
-
         self.bar = None
         self.end = None
 
@@ -520,38 +487,6 @@ class IfBlock_IREKO(NestBlock):
         self.block_bar_point = Point(x, y - length)
 
         label = Label(text="If")
-        label.color = (0, 0, 0, 1)
-        label.pos = (x + 10, y - length + 10)
-        label.size = (length*2 - 20, length - 20)
-        self.add_widget(label)
-        self.components.append(label)
-
-
-class EndBlock(ConcreteBlock):
-    def __init__(self):
-        super(EndBlock, self).__init__()
-        self.is_end_block = True
-
-    def draw(self, x, y):
-        length = 50
-        frame_width = 3
-
-        with self.canvas:
-            Color(0, 0, 1)  # 枠線 (赤)
-            self.components.append(
-                Rectangle(pos=(x, y - length), size=(length*2, length))
-            )
-            Color(1, 1, 1)  # 本体 (白)
-            self.components.append(
-                Rectangle(pos=(x + frame_width, y - length + frame_width),
-                          size=(length*2 - frame_width*2, length - frame_width*2)
-                          )
-            )
-
-        self.block_start_point = [x, y]
-        self.block_end_point = [x, y - length]
-
-        label = Label(text="End")
         label.color = (0, 0, 0, 1)
         label.pos = (x + 10, y - length + 10)
         label.size = (length*2 - 20, length - 20)

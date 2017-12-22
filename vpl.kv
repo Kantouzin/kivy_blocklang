@@ -24,15 +24,9 @@
                     text: "Execute"
                     on_press: code_area.exec_block()
 
-                ActionGroup:
-                    mode: "spinner"
-                    text: "Nest"
-                    ActionButton:
-                        text: "If"
-                        on_press: code_area.set_block("if")
-                    ActionButton:
-                        text: "End"
-                        on_press: code_area.set_block("end")
+                ActionButton:
+                    text: "if"
+                    on_press: code_area.set_block("if")
 
                 ActionGroup:
                     mode: "spinner"
