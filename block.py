@@ -94,16 +94,19 @@ class ConcreteBlock(AbstractBlock, Widget):
     def move(self, dx, dy):
         block = self
         while block is not None:
+            # blockのcomponentを(dx, dy)分移動する
             for component in block.components:
-                x, y = component.pos[0] - dx, component.pos[1] - dy
-
-                # floatにcastしないと以下のerror messageが発生する
+                # float型にcastしないと以下のerror messageが発生する
                 # ValueError: Label.x have an invalid format
-                component.pos = (float(x), float(y))
+                x, y = float(component.pos[0] - dx), float(component.pos[1] - dy)
 
+                component.pos = (x, y)
+
+            # blockの始点と終点の更新
             block.block_start_point -= Point(dx, dy)
             block.block_end_point -= Point(dx, dy)
 
+            # 関数, 入れ子型Blockの, 引数Blockについての処理
             if block.status in [BlockStatus.Function, BlockStatus.Nest]:
                 block.block_elem_point -= Point(dx, dy)
 
@@ -111,7 +114,7 @@ class ConcreteBlock(AbstractBlock, Widget):
                     elem_block = block.elem_block
 
                     for component in elem_block.components:
-                        x, y = component.pos[0] - dx, component.pos[1] - dy
+                        x, y = float(component.pos[0] - dx), float(component.pos[1] - dy)
                         component.pos = (x, y)
 
                     elem_block.block_start_point -= Point(dx, dy)
@@ -125,7 +128,7 @@ class ConcreteBlock(AbstractBlock, Widget):
                     nest_block = block.nest_block
 
                     for component in nest_block.components:
-                        x, y = component.pos[0] - dx, component.pos[1] - dy
+                        x, y = float(component.pos[0] - dx), float(component.pos[1] - dy)
                         component.pos = (x, y)
 
                     nest_block.block_start_point -= Point(dx, dy)
@@ -139,7 +142,7 @@ class ConcreteBlock(AbstractBlock, Widget):
                             nest_elem_block = nest_block.elem_block
 
                             for component in nest_elem_block.components:
-                                x, y = component.pos[0] - dx, component.pos[1] - dy
+                                x, y = float(component.pos[0] - dx), float(component.pos[1] - dy)
                                 component.pos = (x, y)
 
                             nest_elem_block.block_start_point -= Point(dx, dy)
