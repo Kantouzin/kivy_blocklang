@@ -1,16 +1,27 @@
 
-from block import ElemBlock, IfBlock, EndBlock, PrintBlock, VariableBlock, ObjectBlock
+import sys
+import io
+import traceback
+from contextlib import contextmanager
+
+from block import ArgumentBlock, IfBlock, PrintBlock, VariableBlock, ClassBlock, BlockStatus
 from kivy.app import App
 from kivy.uix.widget import Widget
 from kivy.uix.boxlayout import BoxLayout
 from kivy.config import Config
 
-from block import IfBlock_IREKO
-
 
 Config.set('input', 'mouse', 'mouse,multitouch_on_demand')
 Config.set('graphics', 'width', '900')
 Config.set('graphics', 'height', '600')
+
+
+@contextmanager
+def stdoutIO():
+    old = sys.stdout
+    sys.stdout = io.StringIO()
+    yield sys.stdout
+    sys.stdout = old
 
 
 class CodeArea(Widget):
@@ -25,16 +36,13 @@ class CodeArea(Widget):
         if n == "print":
             self.select_block = PrintBlock
         elif n == "if":
-            # self.select_block = IfBlock
-            self.select_block = IfBlock_IREKO
+            self.select_block = IfBlock
         elif n == "elem":
-            self.select_block = ElemBlock
-        elif n == "end":
-            self.select_block = EndBlock
+            self.select_block = ArgumentBlock
         elif n == "variable":
             self.select_block = VariableBlock
         elif n == "object":
-            self.select_block = ObjectBlock
+            self.select_block = ClassBlock
 
     def on_touch_down(self, touch):
         if "button" in touch.profile:
@@ -59,32 +67,42 @@ class CodeArea(Widget):
             block.next_block = None
             block.back_block = None
 
-            if block.is_function_block or block.is_nest_block or block.is_object_block:
+            if block.status in [BlockStatus.Function, BlockStatus.Nest]:
                 block.elem_block = None
+
+            if block.status == BlockStatus.Nest:
+                block.nest_block = None
 
         # 接続の判定
         for block1 in self.codes:
             for block2 in self.codes:
                 if block1 == block2:
                     continue
+                block1.connect_block(block2)
 
-                if block1.can_connect_next(block2):
-                    dx = block2.block_start_point[0] - block1.block_end_point[0]
-                    dy = block2.block_start_point[1] - block1.block_end_point[1]
+        # 入れ子部の拡大
+        # 悪質なコードだから修正しようね
+        for block in self.codes:
+            if block.status == BlockStatus.Nest:
+                length = 50
+                nest_block = block.nest_block
+                while nest_block is not None:
+                    length += 50
+                    nest_block = nest_block.next_block
 
-                    block2.move(dx, dy)
-                    block1.next_block = block2
-                    block2.back_block = block1
+                block.bar.size = (block.bar.size[0], length)
+                block.bar.pos = (block.block_bar_point.x, block.block_bar_point.y - length)
+                block.end.pos = (block.block_bar_point.x, block.block_bar_point.y - length - 50/3)
 
-                if (block1.is_function_block or block1.is_nest_block or block1.is_object_block)\
-                        and block2.is_elem_block:
-                    if block1.can_connect_elem(block2):
-                        dx = block2.block_start_point[0] - block1.elem_end_point[0]
-                        dy = block2.block_start_point[1] - block1.elem_end_point[1]
+                from block import Point
+                distance = block.block_end_point - Point(block.end.pos[0], block.end.pos[1])
+                block.block_end_point = Point(block.end.pos[0], block.end.pos[1])
 
-                        block2.move(dx, dy)
-                        block1.elem_block = block2
-                        block2.back_block = block1
+                next_block = block.next_block
+                while next_block is not None:
+                    # ここに入れ子blockに接続されたblockを移動させるコードを書こう
+                    next_block.move(distance.x, distance.y)
+                    next_block = next_block.next_block
 
     def exec_block(self):
         # すべてのブロックが接続されている
@@ -101,41 +119,20 @@ class CodeArea(Widget):
         exec_script = ""
         indent = 0
         while head is not None:
-            if head.is_function_block:              # 関数ブロック
-                exec_script += "    " * indent
-                exec_script += head.code
-                exec_script += "("
-                if head.elem_block is not None:
-                    exec_script += head.elem_block.code
-                exec_script += ")\n"
-            elif head.is_variable_block:            # 変数宣言ブロック
-                exec_script += "    " * indent
-                exec_script += head.code1 + " = " + head.code2 + "\n"
-            elif head.is_nest_block:                # 入れ子ブロック
-                exec_script += "    " * indent
-                exec_script += head.code
-                exec_script += "("
-                if head.elem_block is not None:
-                    exec_script += head.elem_block.code
-                exec_script += "):\n"
-                indent += 1
-            elif head.is_end_block:
-                indent -= 1
-            elif head.is_object_block:
-                exec_script += "    " * indent
-                exec_script += "class"
-                if head.elem_block is not None:
-                    exec_script += head.elem_block.code
-                exec_script += ":\n"
-
+            exec_script, indent = head.make_code(exec_script, indent)
             head = head.next_block
 
         self.parent.parent.ids["ti_code"].text = exec_script
 
-        try:
-            exec(exec_script)
-        except Exception as error:
-            print(error)
+        with stdoutIO() as stdout_string:
+            error = ""
+            try:
+                exec(exec_script)
+            except:
+                error = traceback.format_exc()
+            finally:
+                result = stdout_string.getvalue() + error
+                self.parent.parent.ids["ti_exec"].text = result
 
 
 class RootWidget(BoxLayout):

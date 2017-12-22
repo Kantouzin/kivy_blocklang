@@ -5,17 +5,79 @@ from kivy.uix.label import Label
 from kivy.uix.textinput import TextInput
 from kivy.graphics import Color, Rectangle
 from kivy.config import Config
-
+import enum
+import numpy as np
 
 Config.set('input', 'mouse', 'mouse,multitouch_on_demand')
 
 
-class Block(Widget):
+DISTANCE_RANGE = 20
+
+
+class BlockStatus(enum.Enum):
+    Function = 0    # 関数
+    Argument = 1    # 引数
+    Nest = 2        # 入れ子
+
+
+class Point:
+    def __init__(self, x, y):
+        self.point = np.array([x, y])
+        self.x = self.point[0]
+        self.y = self.point[1]
+
+    def __str__(self):
+        return "(" + str(self.x) + ", " + str(self.y) + ")"
+
+    def __add__(self, other):
+        return Point(self.x + other.x, self.y + other.y)
+
+    def __iadd__(self, other):
+        self.point += other.point
+        self.x, self.y = self.point
+        return self
+
+    def __sub__(self, other):
+        return Point(self.x - other.x, self.y - other.y)
+
+    def __isub__(self, other):
+        self.point -= other.point
+        self.x, self.y = self.point
+        return self
+
+    def norm(self):
+        return np.linalg.norm(self.point)
+
+
+class AbstractBlock:
     __metaclass__ = ABCMeta
+
+    @abstractmethod
+    def move(self, dx, dy):
+        return NotImplementedError()
+
+    @abstractmethod
+    def connect_block(self, block):
+        return NotImplementedError()
+
+    @abstractmethod
+    def make_code(self, codes, indent):
+        return NotImplementedError()
+
+    @abstractmethod
+    def draw(self, x, y):
+        return NotImplementedError()
+
+
+class ConcreteBlock(AbstractBlock, Widget):
+    __metaclass__ = ABCMeta
+
     can_touch = True  # Block に mouse click 可能か
 
     def __init__(self):
-        super(Block, self).__init__()
+        super(ConcreteBlock, self).__init__()
+        
+        self.status = None
 
         self.code = ""                  # 実行する Python コード
         self.components = []            # Block の持つ Widget 要素
@@ -26,45 +88,65 @@ class Block(Widget):
         self.block_start_point = None   # ブロックの始点座標
         self.block_end_point = None     # Block の終点座標 = 次の Block が繋がる座標
 
-        self.is_function_block = False
-        self.is_variable_block = False
-        self.is_elem_block = False
-        self.is_nest_block = False
-        self.is_end_block = False
-        self.is_object_block = False
-
         self.is_touched = False         # Block が mouse click されているか
         self.mouse_start_point = None   # mouse drag の始点
 
     def move(self, dx, dy):
         block = self
         while block is not None:
+            # blockのcomponentを(dx, dy)分移動する
             for component in block.components:
-                x = component.pos[0] - dx
-                y = component.pos[1] - dy
+                # float型にcastしないと以下のerror messageが発生する
+                # ValueError: Label.x have an invalid format
+                x, y = float(component.pos[0] - dx), float(component.pos[1] - dy)
+
                 component.pos = (x, y)
 
-            block.block_start_point[0] -= dx
-            block.block_start_point[1] -= dy
-            block.block_end_point[0] -= dx
-            block.block_end_point[1] -= dy
+            # blockの始点と終点の更新
+            block.block_start_point -= Point(dx, dy)
+            block.block_end_point -= Point(dx, dy)
 
-            if block.is_function_block or block.is_nest_block or block.is_object_block:
-                block.elem_end_point[0] -= dx
-                block.elem_end_point[1] -= dy
+            # 関数, 入れ子型Blockの, 引数Blockについての処理
+            if block.status in [BlockStatus.Function, BlockStatus.Nest]:
+                block.block_elem_point -= Point(dx, dy)
 
                 if block.elem_block is not None:
                     elem_block = block.elem_block
 
                     for component in elem_block.components:
-                        x = component.pos[0] - dx
-                        y = component.pos[1] - dy
+                        x, y = float(component.pos[0] - dx), float(component.pos[1] - dy)
                         component.pos = (x, y)
 
-                    elem_block.block_start_point[0] -= dx
-                    elem_block.block_start_point[1] -= dy
-                    elem_block.block_end_point[0] -= dx
-                    elem_block.block_end_point[1] -= dy
+                    elem_block.block_start_point -= Point(dx, dy)
+                    elem_block.block_end_point -= Point(dx, dy)
+
+            if block.status == BlockStatus.Nest:
+                block.block_nest_point -= Point(dx, dy)
+                block.block_bar_point -= Point(dx, dy)
+
+                if block.nest_block is not None:
+                    nest_block = block.nest_block
+
+                    for component in nest_block.components:
+                        x, y = float(component.pos[0] - dx), float(component.pos[1] - dy)
+                        component.pos = (x, y)
+
+                    nest_block.block_start_point -= Point(dx, dy)
+                    nest_block.block_end_point -= Point(dx, dy)
+
+                    # ここわるいコード
+                    if nest_block.status in [BlockStatus.Function, BlockStatus.Nest]:
+                        nest_block.block_elem_point -= Point(dx, dy)
+
+                        if nest_block.elem_block is not None:
+                            nest_elem_block = nest_block.elem_block
+
+                            for component in nest_elem_block.components:
+                                x, y = float(component.pos[0] - dx), float(component.pos[1] - dy)
+                                component.pos = (x, y)
+
+                            nest_elem_block.block_start_point -= Point(dx, dy)
+                            nest_elem_block.block_end_point -= Point(dx, dy)
 
             block = block.next_block
 
@@ -77,12 +159,12 @@ class Block(Widget):
 
     def on_touch_down(self, touch):
         if "button" in touch.profile:
-            if touch.button == "left" and self.is_in_block(touch) and Block.can_touch:
+            if touch.button == "left" and self.is_in_block(touch) and ConcreteBlock.can_touch:
                 self.is_touched = True
-                Block.can_touch = False
+                ConcreteBlock.can_touch = False
                 self.mouse_start_point = touch.pos
 
-        return super(Block, self).on_touch_down(touch)
+        return super(ConcreteBlock, self).on_touch_down(touch)
 
     def on_touch_move(self, touch):
         if self.is_touched:
@@ -90,76 +172,100 @@ class Block(Widget):
             self.move(dx, dy)
             self.mouse_start_point = touch.pos
 
-        return super(Block, self).on_touch_move(touch)
+        return super(ConcreteBlock, self).on_touch_move(touch)
 
     def on_touch_up(self, touch):
         if self.is_touched:
             self.is_touched = False
-            Block.can_touch = True
+            ConcreteBlock.can_touch = True
 
-        return super(Block, self).on_touch_up(touch)
+        return super(ConcreteBlock, self).on_touch_up(touch)
+
+    @abstractmethod
+    def make_code(self, codes, indent):
+        return NotImplementedError()
 
     @abstractmethod
     def draw(self, x, y):
         return NotImplementedError()
 
-    def can_connect_next(self, block2):
-        if self.next_block is not None:
-            return False
 
-        if self.is_elem_block or block2.is_elem_block:
-            return False
-
-        dx = self.block_end_point[0] - block2.block_start_point[0]
-        dy = self.block_end_point[1] - block2.block_start_point[1]
-
-        d_range = 20
-        if dx**2 + dy**2 < d_range**2:
-            return True
-        else:
-            return False
-
-    def can_connect_elem(self, block2):
-
-        if self.elem_block is not None:
-            return False
-
-        dx = self.elem_end_point[0] - block2.block_start_point[0]
-        dy = self.elem_end_point[1] - block2.block_start_point[1]
-
-        d_range = 20
-        if dx**2 + dy**2 < d_range**2:
-            return True
-        else:
-            return False
-
-    def can_connect_nest(self, block2):
-        if self.is_nest_block is not True:
-            return False
-
-        # ヤバい
-
-
-class FunctionBlock(Block):
+class FunctionBlock(ConcreteBlock):
     __metaclass__ = ABCMeta
 
     def __init__(self):
         super(FunctionBlock, self).__init__()
-        self.is_function_block = True
-        self.elem_end_point = None
+        self.status = BlockStatus.Function
+        self.block_elem_point = None
         self.elem_block = None
+
+    def connect_block(self, block):
+        if self.can_connect_next(block):
+            dx, dy = (block.block_start_point - self.block_end_point).point
+            block.move(dx, dy)
+            self.next_block = block
+            block.back_block = self
+
+        if self.can_connect_argument(block):
+            dx, dy = (block.block_start_point - self.block_elem_point).point
+            block.move(dx, dy)
+            self.elem_block = block
+            block.back_block = self
+
+    def can_connect_next(self, block):
+        if block.status == BlockStatus.Argument:
+            return False
+
+        dx, dy = (block.block_start_point - self.block_end_point).point
+
+        if Point(dx, dy).norm() < DISTANCE_RANGE:
+            return True
+        else:
+            return False
+
+    def can_connect_argument(self, block):
+        if block.status != BlockStatus.Argument:
+            return False
+
+        dx, dy = (block.block_start_point - self.block_elem_point).point
+
+        if Point(dx, dy).norm() < DISTANCE_RANGE:
+            return True
+        else:
+            return False
+
+    @abstractmethod
+    def make_code(self, codes, indent):
+        return NotImplementedError()
 
     @abstractmethod
     def draw(self, x, y):
         return NotImplementedError()
 
 
-class VariableBlock(Block):
+class VariableBlock(ConcreteBlock):
     def __init__(self):
         super(VariableBlock, self).__init__()
-        self.is_variable_block = True
         self.code1 = ""
         self.code2 = ""
+
+    def connect_block(self, block):
+        if self.can_connect_next(block):
+            dx, dy = (block.block_start_point - self.block_end_point).point
+            block.move(dx, dy)
+            self.next_block = block
+            block.back_block = self
+
+    def can_connect_next(self, block):
+        if block.status == BlockStatus.Argument:
+            return False
+
+        dx, dy = (block.block_start_point - self.block_end_point).point
+
+        if Point(dx, dy).norm() < DISTANCE_RANGE:
+            return True
+        else:
+            return False
 
     def draw(self, x, y):
         length = 50
@@ -177,8 +283,8 @@ class VariableBlock(Block):
                           )
             )
 
-        self.block_start_point = [x, y]
-        self.block_end_point = [x, y - length]
+        self.block_start_point = Point(x, y)
+        self.block_end_point = Point(x, y - length)
 
         label = Label(text="=")
         label.color = (0, 0, 0, 1)
@@ -208,10 +314,32 @@ class VariableBlock(Block):
         self.code2 = text_input.text
 
 
-class ElemBlock(Block):
+class Declaration(ConcreteBlock):
     def __init__(self):
-        super(ElemBlock, self).__init__()
-        self.is_elem_block = True
+        super(Declaration, self).__init__()
+
+    def make_code(self, codes, indent):
+        pass
+
+    def draw(self, x, y):
+        pass
+
+    def connect_block(self, block):
+        pass
+
+
+class ArgumentBlock(ConcreteBlock):
+    def __init__(self):
+        super(ArgumentBlock, self).__init__()
+        self.status = BlockStatus.Argument
+
+    def connect_block(self, block):
+        pass
+
+    def make_code(self, codes, indent):
+        codes += self.code
+
+        return codes, indent
 
     def draw(self, x, y):
         length = 50
@@ -229,8 +357,8 @@ class ElemBlock(Block):
                           )
             )
 
-        self.block_start_point = [x, y]
-        self.block_end_point = [x, y - length]
+        self.block_start_point = Point(x, y)
+        self.block_end_point = Point(x, y - length)
 
         text_input = TextInput(text=self.code, multiline=False)
         text_input.pos = (x + 10, y - length + 10)
@@ -244,14 +372,75 @@ class ElemBlock(Block):
         self.code = text_input.text
 
 
-class NestBlock(Block):
+class NestBlock(ConcreteBlock):
     __metaclass__ = ABCMeta
 
     def __init__(self):
         super(NestBlock, self).__init__()
-        self.is_nest_block = True
-        self.elem_end_point = None
+        self.status = BlockStatus.Nest
+
+        self.block_elem_point = None
+        self.block_nest_point = None        # 入れ子内に接続する点
+        self.block_bar_point = None         # barが接続する点
+
         self.elem_block = None
+        self.nest_block = None
+
+    def connect_block(self, block):
+        if self.can_connect_next(block):
+            dx, dy = (block.block_start_point - self.block_end_point).point
+            block.move(dx, dy)
+            self.next_block = block
+            block.back_block = self
+
+        if self.can_connect_argument(block):
+            dx, dy = (block.block_start_point - self.block_elem_point).point
+            block.move(dx, dy)
+            self.elem_block = block
+            block.back_block = self
+
+        if self.can_connect_nest(block):
+            dx, dy = (block.block_start_point - self.block_nest_point).point
+            block.move(dx, dy)
+            self.nest_block = block
+            block.back_block = self
+
+    def can_connect_next(self, block):
+        if block.status == BlockStatus.Argument:
+            return False
+
+        dx, dy = (block.block_start_point - self.block_end_point).point
+
+        if Point(dx, dy).norm() < DISTANCE_RANGE:
+            return True
+        else:
+            return False
+
+    def can_connect_argument(self, block):
+        if block.status != BlockStatus.Argument:
+            return False
+
+        dx, dy = (block.block_start_point - self.block_elem_point).point
+
+        if Point(dx, dy).norm() < DISTANCE_RANGE:
+            return True
+        else:
+            return False
+
+    def can_connect_nest(self, block):
+        if block.status == BlockStatus.Argument:
+            return False
+
+        dx, dy = (block.block_start_point - self.block_nest_point).point
+
+        if Point(dx, dy).norm() < DISTANCE_RANGE:
+            return True
+        else:
+            return False
+
+    @abstractmethod
+    def make_code(self, codes, indent):
+        return NotImplementedError()
 
     @abstractmethod
     def draw(self, x, y):
@@ -263,40 +452,29 @@ class IfBlock(NestBlock):
         super(IfBlock, self).__init__()
         self.code = "if"
 
-    def draw(self, x, y):
-        length = 50
-        frame_width = 3
-
-        with self.canvas:
-            Color(0, 0, 1)  # 枠線 (青)
-            self.components.append(
-                Rectangle(pos=(x, y - length), size=(length*2, length))
-            )
-            Color(1, 1, 1)  # 本体 (白)
-            self.components.append(
-                Rectangle(pos=(x + frame_width, y - length + frame_width),
-                          size=(length*2 - frame_width*2, length - frame_width*2)
-                          )
-            )
-
-        self.block_start_point = [x, y]
-        self.block_end_point = [x, y - length]
-        self.elem_end_point = [x + length*2, y]
-
-        label = Label(text="If")
-        label.color = (0, 0, 0, 1)
-        label.pos = (x + 10, y - length + 10)
-        label.size = (length*2 - 20, length - 20)
-        self.add_widget(label)
-        self.components.append(label)
-
-
-class IfBlock_IREKO(NestBlock):
-    def __init__(self):
-        super(IfBlock_IREKO, self).__init__()
-        self.code = "if"
-
         self.bar = None
+        self.end = None
+
+    def make_code(self, codes, indent):
+        codes += "    " * indent + "if "
+
+        if self.elem_block is not None:
+            codes, indent = self.elem_block.make_code(codes, indent)
+        else:
+            # ここでerrorを起こすべきだが、まずはTrue
+            codes += "True"
+
+        codes += ":\n"
+
+        indent += 1
+        # ここでif文中のcodeを実行
+        next_block = self.nest_block
+        while next_block is not None:
+            codes, indent = next_block.make_code(codes, indent)
+            next_block = next_block.next_block
+        indent -= 1
+
+        return codes, indent
 
     def draw(self, x, y):
         length = 50
@@ -308,12 +486,9 @@ class IfBlock_IREKO(NestBlock):
                 Rectangle(pos=(x, y - length), size=(length*2, length))
             )
             self.bar = Rectangle(pos=(x, y - length*2), size=(length/3, length))
-            self.components.append(
-                self.bar
-            )
-            self.components.append(
-                Rectangle(pos=(x, y - (length*2+length/3)), size=(length*4, length/3))
-            )
+            self.components.append(self.bar)
+            self.end = Rectangle(pos=(x, y - (length*2+length/3)), size=(length*4, length/3))
+            self.components.append(self.end)
 
             Color(1, 1, 1)  # 本体 (白)
             self.components.append(
@@ -322,43 +497,13 @@ class IfBlock_IREKO(NestBlock):
                           )
             )
 
-        self.block_start_point = [x, y]
-        self.block_end_point = [x, y - (length*2+length/3)]
-        self.elem_end_point = [x + length*2, y]
+        self.block_start_point = Point(x, y)
+        self.block_end_point = Point(x, y - (length*2+length/3))
+        self.block_elem_point = Point(x + length*2, y)
+        self.block_nest_point = Point(x + length/3, y - length)
+        self.block_bar_point = Point(x, y - length)
 
         label = Label(text="If")
-        label.color = (0, 0, 0, 1)
-        label.pos = (x + 10, y - length + 10)
-        label.size = (length*2 - 20, length - 20)
-        self.add_widget(label)
-        self.components.append(label)
-
-
-class EndBlock(Block):
-    def __init__(self):
-        super(EndBlock, self).__init__()
-        self.is_end_block = True
-
-    def draw(self, x, y):
-        length = 50
-        frame_width = 3
-
-        with self.canvas:
-            Color(0, 0, 1)  # 枠線 (赤)
-            self.components.append(
-                Rectangle(pos=(x, y - length), size=(length*2, length))
-            )
-            Color(1, 1, 1)  # 本体 (白)
-            self.components.append(
-                Rectangle(pos=(x + frame_width, y - length + frame_width),
-                          size=(length*2 - frame_width*2, length - frame_width*2)
-                          )
-            )
-
-        self.block_start_point = [x, y]
-        self.block_end_point = [x, y - length]
-
-        label = Label(text="End")
         label.color = (0, 0, 0, 1)
         label.pos = (x + 10, y - length + 10)
         label.size = (length*2 - 20, length - 20)
@@ -370,6 +515,16 @@ class PrintBlock(FunctionBlock):
     def __init__(self):
         super(PrintBlock, self).__init__()
         self.code = "print"
+
+    def make_code(self, codes, indent):
+        codes += "    " * indent + "print("
+
+        if self.elem_block is not None:
+            codes, indent = self.elem_block.make_code(codes, indent)
+
+        codes += ")\n"
+
+        return codes, indent
 
     def draw(self, x, y):
         length = 50
@@ -387,9 +542,9 @@ class PrintBlock(FunctionBlock):
                           )
             )
 
-        self.block_start_point = [x, y]
-        self.block_end_point = [x, y - length]
-        self.elem_end_point = [x + length*2, y]
+        self.block_start_point = Point(x, y)
+        self.block_end_point = Point(x, y - length)
+        self.block_elem_point = Point(x + length*2, y)
 
         label = Label(text="Print")
         label.color = (0, 0, 0, 1)
@@ -399,35 +554,62 @@ class PrintBlock(FunctionBlock):
         self.components.append(label)
 
 
-class ObjectBlock(Block):
+class ClassBlock(NestBlock):
     def __init__(self):
-        super(ObjectBlock, self).__init__()
+        super(ClassBlock, self).__init__()
         self.code = "class"
-        self.is_object_block = True
-        self.elem_end_point = None
-        self.elem_block = None
+
+        self.bar = None
+        self.end = None
+
+    def make_code(self, codes, indent):
+        codes += "    " * indent + "class "
+
+        if self.elem_block is not None:
+            codes, indent = self.elem_block.make_code(codes, indent)
+        else:
+            # ここでerrorを起こすべきだが、まずはFoo
+            codes += "Foo"
+
+        codes += ":\n"
+
+        indent += 1
+        # ここでif文中のcodeを実行
+        indent -= 1
+
+        return codes, indent
 
     def draw(self, x, y):
         length = 50
         frame_width = 3
 
         with self.canvas:
-            Color(0.7, 0.7, 0.7)  # 枠線 (赤)
+            Color(0.7, 0.7, 0.7)  # 枠線 (灰)
+
             self.components.append(
                 Rectangle(pos=(x, y - length), size=(length*2, length))
             )
+            self.bar = Rectangle(pos=(x, y - length*2), size=(length/3, length))
+            self.components.append(self.bar)
+
+            self.end = Rectangle(pos=(x, y - (length * 2 + length / 3)), size=(length * 4, length / 3))
+            self.components.append(self.end)
+
             Color(1, 1, 1)  # 本体 (白)
+
             self.components.append(
                 Rectangle(pos=(x + frame_width, y - length + frame_width),
                           size=(length*2 - frame_width*2, length - frame_width*2)
                           )
             )
 
-        self.block_start_point = [x, y]
-        self.block_end_point = [x, y - length]
-        self.elem_end_point = [x + length*2, y]
+        self.block_start_point = Point(x, y)
+        self.block_end_point = Point(x, y - (length*2+length/3))
+        self.block_elem_point = Point(x + length*2, y)
+        self.block_nest_point = Point(x + length/3, y - length)
+        self.block_bar_point = Point(x, y - length)
 
-        label = Label(text="Class")
+        label = Label(text="If")
         label.color = (0, 0, 0, 1)
         label.pos = (x + 10, y - length + 10)
         label.size = (length*2 - 20, length - 20)
