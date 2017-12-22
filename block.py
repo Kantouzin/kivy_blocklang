@@ -314,6 +314,20 @@ class VariableBlock(ConcreteBlock):
         self.code2 = text_input.text
 
 
+class Declaration(ConcreteBlock):
+    def __init__(self):
+        super(Declaration, self).__init__()
+
+    def make_code(self, codes, indent):
+        pass
+
+    def draw(self, x, y):
+        pass
+
+    def connect_block(self, block):
+        pass
+
+
 class ArgumentBlock(ConcreteBlock):
     def __init__(self):
         super(ArgumentBlock, self).__init__()
@@ -545,8 +559,8 @@ class ClassBlock(NestBlock):
         super(ClassBlock, self).__init__()
         self.code = "class"
 
-        self.elem_end_point = None
-        self.elem_block = None
+        self.bar = None
+        self.end = None
 
     def make_code(self, codes, indent):
         codes += "    " * indent + "class "
@@ -571,18 +585,18 @@ class ClassBlock(NestBlock):
 
         with self.canvas:
             Color(0.7, 0.7, 0.7)  # 枠線 (灰)
+
             self.components.append(
                 Rectangle(pos=(x, y - length), size=(length*2, length))
             )
             self.bar = Rectangle(pos=(x, y - length*2), size=(length/3, length))
-            self.components.append(
-                self.bar
-            )
-            self.components.append(
-                Rectangle(pos=(x, y - (length*2+length/3)), size=(length*4, length/3))
-            )
+            self.components.append(self.bar)
+
+            self.end = Rectangle(pos=(x, y - (length * 2 + length / 3)), size=(length * 4, length / 3))
+            self.components.append(self.end)
 
             Color(1, 1, 1)  # 本体 (白)
+
             self.components.append(
                 Rectangle(pos=(x + frame_width, y - length + frame_width),
                           size=(length*2 - frame_width*2, length - frame_width*2)
@@ -592,6 +606,8 @@ class ClassBlock(NestBlock):
         self.block_start_point = Point(x, y)
         self.block_end_point = Point(x, y - (length*2+length/3))
         self.block_elem_point = Point(x + length*2, y)
+        self.block_nest_point = Point(x + length/3, y - length)
+        self.block_bar_point = Point(x, y - length)
 
         label = Label(text="If")
         label.color = (0, 0, 0, 1)
