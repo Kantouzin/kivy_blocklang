@@ -91,10 +91,14 @@ class ConcreteBlock(AbstractBlock, Widget):
 
             block = block.next_block
 
+    def initialize_connect(self):
+        self.next_block = None
+        self.back_block = None
+
     def is_in_block(self, touch):
         for component in self.components:
             if (component.pos[0] <= touch.pos[0] <= component.pos[0] + component.size[0]
-                and component.pos[1] <= touch.pos[1] <= component.pos[1] + component.size[1]):
+                    and component.pos[1] <= touch.pos[1] <= component.pos[1] + component.size[1]):
                 return True
         return False
 

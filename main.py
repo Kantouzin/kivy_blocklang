@@ -67,14 +67,7 @@ class CodeArea(Widget):
     def connect_block(self):
         # 接続の初期化
         for block in self.codes:
-            block.next_block = None
-            block.back_block = None
-
-            if block.status in [BlockStatus.Function, BlockStatus.Nest]:
-                block.elem_block = None
-
-            if block.status == BlockStatus.Nest:
-                block.nest_block = None
+            block.initialize_connect()
 
         # 接続の判定
         for block1 in self.codes:

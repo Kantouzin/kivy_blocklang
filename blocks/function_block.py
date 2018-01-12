@@ -56,6 +56,10 @@ class FunctionBlock(ConcreteBlock):
         else:
             return False
 
+    def initialize_connect(self):
+        super(FunctionBlock, self).initialize_connect()
+        self.elem_block = None
+
     @abstractmethod
     def make_code(self, codes, indent):
         return NotImplementedError()

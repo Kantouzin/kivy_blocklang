@@ -78,6 +78,10 @@ class NestBlock(ConcreteBlock):
         else:
             return False
 
+    def initialize_connect(self):
+        super(NestBlock, self).initialize_connect()
+        self.nest_block = None
+
     @abstractmethod
     def make_code(self, codes, indent):
         return NotImplementedError()
