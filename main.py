@@ -4,12 +4,15 @@ import io
 import traceback
 from contextlib import contextmanager
 
-from block import ArgumentBlock, IfBlock, PrintBlock, VariableBlock, ClassBlock, BlockStatus
+import blocks
 from kivy.app import App
 from kivy.uix.widget import Widget
 from kivy.uix.boxlayout import BoxLayout
 from kivy.config import Config
 
+# ここにこれimportするのヤバくね？
+from blocks.block_status import BlockStatus
+from blocks.point import Point
 
 Config.set('input', 'mouse', 'mouse,multitouch_on_demand')
 Config.set('graphics', 'width', '900')
@@ -30,19 +33,19 @@ class CodeArea(Widget):
 
         self.codes = []
 
-        self.select_block = PrintBlock
+        self.select_block = blocks.PrintBlock
 
     def set_block(self, n):
         if n == "print":
-            self.select_block = PrintBlock
+            self.select_block = blocks.PrintBlock
         elif n == "if":
-            self.select_block = IfBlock
+            self.select_block = blocks.IfBlock
         elif n == "elem":
-            self.select_block = ArgumentBlock
+            self.select_block = blocks.ArgumentBlock
         elif n == "variable":
-            self.select_block = VariableBlock
+            self.select_block = blocks.DeclareBlock
         elif n == "object":
-            self.select_block = ClassBlock
+            self.select_block = blocks.ClassBlock
 
     def on_touch_down(self, touch):
         if "button" in touch.profile:
@@ -94,7 +97,6 @@ class CodeArea(Widget):
                 block.bar.pos = (block.block_bar_point.x, block.block_bar_point.y - length)
                 block.end.pos = (block.block_bar_point.x, block.block_bar_point.y - length - 50/3)
 
-                from block import Point
                 distance = block.block_end_point - Point(block.end.pos[0], block.end.pos[1])
                 block.block_end_point = Point(block.end.pos[0], block.end.pos[1])
 
