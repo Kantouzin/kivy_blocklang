@@ -4,15 +4,12 @@ import io
 import traceback
 from contextlib import contextmanager
 
-import blocks
 from kivy.app import App
 from kivy.uix.widget import Widget
 from kivy.uix.boxlayout import BoxLayout
 from kivy.config import Config
 
-# ここにこれimportするのヤバくね？
-from blocks.block_status import BlockStatus
-from blocks.point import Point
+import blocks
 
 Config.set('input', 'mouse', 'mouse,multitouch_on_demand')
 Config.set('graphics', 'width', '900')
