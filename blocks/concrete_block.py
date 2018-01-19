@@ -66,28 +66,7 @@ class ConcreteBlock(AbstractBlock, Widget):
                 block.block_bar_point -= Point(dx, dy)
 
                 if block.nest_block is not None:
-                    nest_block = block.nest_block
-
-                    for component in nest_block.components:
-                        x, y = float(component.pos[0] - dx), float(component.pos[1] - dy)
-                        component.pos = (x, y)
-
-                    nest_block.block_start_point -= Point(dx, dy)
-                    nest_block.block_end_point -= Point(dx, dy)
-
-                    # ここわるいコード
-                    if nest_block.status in [BlockStatus.Function, BlockStatus.Nest]:
-                        nest_block.block_elem_point -= Point(dx, dy)
-
-                        if nest_block.elem_block is not None:
-                            nest_elem_block = nest_block.elem_block
-
-                            for component in nest_elem_block.components:
-                                x, y = float(component.pos[0] - dx), float(component.pos[1] - dy)
-                                component.pos = (x, y)
-
-                            nest_elem_block.block_start_point -= Point(dx, dy)
-                            nest_elem_block.block_end_point -= Point(dx, dy)
+                    block.nest_block.move(dx, dy)
 
             block = block.next_block
 
