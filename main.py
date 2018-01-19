@@ -74,7 +74,7 @@ class CodeArea(Widget):
         # 接続の判定
         for block1 in self.codes:
             for block2 in self.codes:
-                if block1 == block2:
+                if block1 is block2:
                     continue
                 block1.connect_block(block2)
 
