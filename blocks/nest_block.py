@@ -284,7 +284,7 @@ class DefineBlock(NestBlock):
         text_input = TextInput(text=self.name, multiline=False)
         text_input.pos = (x + 100, y - length + 10)
         text_input.size = (length*2 - 20, length - 20)
-        text_input.bind(on_text_validate=self.on_enter)
+        text_input.bind(text=self.on_text)
 
         self.add_widget(text_input)
         self.components.append(text_input)
@@ -296,5 +296,5 @@ class DefineBlock(NestBlock):
         self.add_widget(label)
         self.components.append(label)
 
-    def on_enter(self, text_input):
-        self.name = text_input.text
+    def on_text(self, _, value):
+        self.name = value
