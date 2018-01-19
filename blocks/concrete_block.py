@@ -133,3 +133,6 @@ class ConcreteBlock(AbstractBlock, Widget):
     @abstractmethod
     def draw(self, x, y):
         return NotImplementedError()
+
+    def update(self):
+        pass

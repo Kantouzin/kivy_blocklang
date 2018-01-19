@@ -24,6 +24,9 @@ class NestBlock(ConcreteBlock):
         self.block_nest_point = None        # 入れ子内に接続する点
         self.block_bar_point = None         # barが接続する点
 
+        self.bar = None
+        self.end = None
+
         self.elem_block = None
         self.nest_block = None
 
@@ -83,6 +86,8 @@ class NestBlock(ConcreteBlock):
         super(NestBlock, self).initialize_connect()
         self.nest_block = None
 
+        # おそらくここに, 拡張した入れ子の座標を初期化する処理が必要
+
     @abstractmethod
     def make_code(self, codes, indent):
         return NotImplementedError()
@@ -90,6 +95,26 @@ class NestBlock(ConcreteBlock):
     @abstractmethod
     def draw(self, x, y):
         return NotImplementedError()
+
+    def update(self):
+        length = 50
+        nest_block = self.nest_block
+        while nest_block is not None:
+            length += 50
+            nest_block = nest_block.next_block
+
+        self.bar.size = (self.bar.size[0], length)
+        self.bar.pos = (self.block_bar_point.x, self.block_bar_point.y - length)
+        self.end.pos = (self.block_bar_point.x, self.block_bar_point.y - length - 50 / 3)
+
+        distance = self.block_end_point - Point(self.end.pos[0], self.end.pos[1])
+        self.block_end_point = Point(self.end.pos[0], self.end.pos[1])
+
+        next_block = self.next_block
+        while next_block is not None:
+            # ここに入れ子blockに接続されたblockを移動させるコードを書こう
+            next_block.move(distance.x, distance.y)
+            next_block = next_block.next_block
 
 
 class IfBlock(NestBlock):

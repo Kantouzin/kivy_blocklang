@@ -72,34 +72,15 @@ class CodeArea(Widget):
             block.initialize_connect()
 
         # 接続の判定
-        for block1 in self.codes:
-            for block2 in self.codes:
-                if block1 is block2:
+        for block_1 in self.codes:
+            for block_2 in self.codes:
+                if block_1 is block_2:
                     continue
-                block1.connect_block(block2)
+                block_1.connect_block(block_2)
 
-        # 入れ子部の拡大
-        # 悪質なコードだから修正しようね
+        # 接続状況に従い更新
         for block in self.codes:
-            if block.status == BlockStatus.Nest:
-                length = 50
-                nest_block = block.nest_block
-                while nest_block is not None:
-                    length += 50
-                    nest_block = nest_block.next_block
-
-                block.bar.size = (block.bar.size[0], length)
-                block.bar.pos = (block.block_bar_point.x, block.block_bar_point.y - length)
-                block.end.pos = (block.block_bar_point.x, block.block_bar_point.y - length - 50/3)
-
-                distance = block.block_end_point - Point(block.end.pos[0], block.end.pos[1])
-                block.block_end_point = Point(block.end.pos[0], block.end.pos[1])
-
-                next_block = block.next_block
-                while next_block is not None:
-                    # ここに入れ子blockに接続されたblockを移動させるコードを書こう
-                    next_block.move(distance.x, distance.y)
-                    next_block = next_block.next_block
+            block.update()
 
     def exec_block(self):
         # すべてのブロックが接続されている
