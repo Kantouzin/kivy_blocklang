@@ -175,7 +175,11 @@ class ClassBlock(NestBlock):
         codes += ":\n"
 
         indent += 1
-        # ここでif文中のcodeを実行
+        # ここで入れ子のcodeを実行
+        next_block = self.nest_block
+        while next_block is not None:
+            codes, indent = next_block.make_code(codes, indent)
+            next_block = next_block.next_block
         indent -= 1
 
         return codes, indent
@@ -210,7 +214,7 @@ class ClassBlock(NestBlock):
         self.block_nest_point = Point(x + length/3, y - length)
         self.block_bar_point = Point(x, y - length)
 
-        label = Label(text="If")
+        label = Label(text="Class")
         label.color = (0, 0, 0, 1)
         label.pos = (x + 10, y - length + 10)
         label.size = (length*2 - 20, length - 20)
