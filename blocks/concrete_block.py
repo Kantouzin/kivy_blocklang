@@ -48,7 +48,7 @@ class ConcreteBlock(AbstractBlock, Widget):
             block.block_end_point -= Point(dx, dy)
 
             # 関数, 入れ子型Blockの, 引数Blockについての処理
-            if block.status in [BlockStatus.Function, BlockStatus.Nest]:
+            if block.status in [BlockStatus.Function, BlockStatus.Nest, BlockStatus.Declare]:
                 block.block_elem_point -= Point(dx, dy)
 
                 if block.elem_block is not None:
