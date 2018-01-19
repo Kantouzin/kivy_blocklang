@@ -46,6 +46,8 @@ class CodeArea(Widget):
             self.select_block = blocks.DeclareBlock
         elif n == "object":
             self.select_block = blocks.ClassBlock
+        elif n == "define":
+            self.select_block = blocks.DefineBlock
 
     def on_touch_down(self, touch):
         if "button" in touch.profile:

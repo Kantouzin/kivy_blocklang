@@ -5,6 +5,7 @@ from abc import ABCMeta, abstractmethod
 
 from kivy.graphics import Color, Rectangle
 from kivy.uix.label import Label
+from kivy.uix.textinput import TextInput
 
 from blocks import DISTANCE_RANGE
 from blocks.block_status import BlockStatus
@@ -220,3 +221,83 @@ class ClassBlock(NestBlock):
         label.size = (length*2 - 20, length - 20)
         self.add_widget(label)
         self.components.append(label)
+
+
+class DefineBlock(NestBlock):
+    def __init__(self):
+        super(DefineBlock, self).__init__()
+        self.code = "class"
+
+        self.name = ""  # 関数名
+
+        self.bar = None
+        self.end = None
+
+    def make_code(self, codes, indent):
+        codes += "    " * indent + "def "
+
+        if self.elem_block is not None:
+            codes, indent = self.elem_block.make_code(codes, indent)
+        else:
+            # ここでerrorを起こすべきだが、まずはFoo
+            codes += "Foo"
+
+        codes += ":\n"
+
+        indent += 1
+        # ここで入れ子のcodeを実行
+        next_block = self.nest_block
+        while next_block is not None:
+            codes, indent = next_block.make_code(codes, indent)
+            next_block = next_block.next_block
+        indent -= 1
+
+        return codes, indent
+
+    def draw(self, x, y):
+        length = 50
+        frame_width = 3
+
+        with self.canvas:
+            Color(0.5, 0.3, 0.7)  # 枠線 (紫)
+
+            self.components.append(
+                Rectangle(pos=(x, y - length), size=(length*2, length))
+            )
+            self.bar = Rectangle(pos=(x, y - length*2), size=(length/3, length))
+            self.components.append(self.bar)
+
+            self.end = Rectangle(pos=(x, y - (length * 2 + length / 3)), size=(length * 4, length / 3))
+            self.components.append(self.end)
+
+            Color(1, 1, 1)  # 本体 (白)
+
+            self.components.append(
+                Rectangle(pos=(x + frame_width, y - length + frame_width),
+                          size=(length*2 - frame_width*2, length - frame_width*2)
+                          )
+            )
+
+        self.block_start_point = Point(x, y)
+        self.block_end_point = Point(x, y - (length*2+length/3))
+        self.block_elem_point = Point(x + length*2, y)
+        self.block_nest_point = Point(x + length/3, y - length)
+        self.block_bar_point = Point(x, y - length)
+
+        text_input = TextInput(text=self.code, multiline=False)
+        text_input.pos = (x + 10, y - length + 10)
+        text_input.size = (length*2 - 20, length - 20)
+        text_input.bind(on_text_validate=self.on_enter)
+
+        self.add_widget(text_input)
+        self.components.append(text_input)
+
+        label = Label(text="define")
+        label.color = (0, 0, 0, 1)
+        label.pos = (x + 10, y - length + 10)
+        label.size = (length*2 - 20, length - 20)
+        self.add_widget(label)
+        self.components.append(label)
+
+    def on_enter(self, text_input):
+        self.name = text_input.text

@@ -2,7 +2,7 @@
 # coding: utf-8
 
 from blocks.function_block import PrintBlock
-from blocks.nest_block import IfBlock, ClassBlock
+from blocks.nest_block import IfBlock, ClassBlock, DefineBlock
 from blocks.argument_block import ArgumentBlock
 from blocks.declare_block import DeclareBlock
 
