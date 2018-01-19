@@ -234,15 +234,12 @@ class DefineBlock(NestBlock):
         self.end = None
 
     def make_code(self, codes, indent):
-        codes += "    " * indent + "def "
+        codes += "    " * indent + "def " + self.name
 
+        codes += "("
         if self.elem_block is not None:
             codes, indent = self.elem_block.make_code(codes, indent)
-        else:
-            # ここでerrorを起こすべきだが、まずはFoo
-            codes += "Foo"
-
-        codes += ":\n"
+        codes += "):\n"
 
         indent += 1
         # ここで入れ子のcodeを実行
@@ -262,7 +259,7 @@ class DefineBlock(NestBlock):
             Color(0.5, 0.3, 0.7)  # 枠線 (紫)
 
             self.components.append(
-                Rectangle(pos=(x, y - length), size=(length*2, length))
+                Rectangle(pos=(x, y - length), size=(length*4, length))
             )
             self.bar = Rectangle(pos=(x, y - length*2), size=(length/3, length))
             self.components.append(self.bar)
@@ -274,18 +271,18 @@ class DefineBlock(NestBlock):
 
             self.components.append(
                 Rectangle(pos=(x + frame_width, y - length + frame_width),
-                          size=(length*2 - frame_width*2, length - frame_width*2)
+                          size=(length*4 - frame_width*2, length - frame_width*2)
                           )
             )
 
         self.block_start_point = Point(x, y)
         self.block_end_point = Point(x, y - (length*2+length/3))
-        self.block_elem_point = Point(x + length*2, y)
+        self.block_elem_point = Point(x + length*4, y)
         self.block_nest_point = Point(x + length/3, y - length)
         self.block_bar_point = Point(x, y - length)
 
-        text_input = TextInput(text=self.code, multiline=False)
-        text_input.pos = (x + 10, y - length + 10)
+        text_input = TextInput(text=self.name, multiline=False)
+        text_input.pos = (x + 100, y - length + 10)
         text_input.size = (length*2 - 20, length - 20)
         text_input.bind(on_text_validate=self.on_enter)
 
