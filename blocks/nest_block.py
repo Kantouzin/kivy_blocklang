@@ -86,8 +86,6 @@ class NestBlock(ConcreteBlock):
         super(NestBlock, self).initialize_connect()
         self.nest_block = None
 
-        # おそらくここに, 拡張した入れ子の座標を初期化する処理が必要
-
     @abstractmethod
     def make_code(self, codes, indent):
         return NotImplementedError()
