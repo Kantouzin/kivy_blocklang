@@ -110,11 +110,8 @@ class NestBlock(ConcreteBlock):
         distance = self.block_end_point - Point(self.end.pos[0], self.end.pos[1])
         self.block_end_point = Point(self.end.pos[0], self.end.pos[1])
 
-        next_block = self.next_block
-        while next_block is not None:
-            # ここに入れ子blockに接続されたblockを移動させるコードを書こう
-            next_block.move(distance.x, distance.y)
-            next_block = next_block.next_block
+        if self.next_block is not None:
+            self.next_block.move(distance.x, distance.y)
 
 
 class IfBlock(NestBlock):
