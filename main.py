@@ -4,12 +4,12 @@ import io
 import traceback
 from contextlib import contextmanager
 
-from block import ArgumentBlock, IfBlock, PrintBlock, VariableBlock, ClassBlock, BlockStatus
 from kivy.app import App
 from kivy.uix.widget import Widget
 from kivy.uix.boxlayout import BoxLayout
 from kivy.config import Config
 
+import blocks
 
 Config.set('input', 'mouse', 'mouse,multitouch_on_demand')
 Config.set('graphics', 'width', '900')
@@ -30,19 +30,23 @@ class CodeArea(Widget):
 
         self.codes = []
 
-        self.select_block = PrintBlock
+        self.select_block = blocks.PrintBlock
 
     def set_block(self, n):
         if n == "print":
-            self.select_block = PrintBlock
+            self.select_block = blocks.PrintBlock
         elif n == "if":
-            self.select_block = IfBlock
+            self.select_block = blocks.IfBlock
         elif n == "elem":
-            self.select_block = ArgumentBlock
+            self.select_block = blocks.ArgumentBlock
         elif n == "variable":
-            self.select_block = VariableBlock
+            self.select_block = blocks.DeclareBlock
         elif n == "object":
-            self.select_block = ClassBlock
+            self.select_block = blocks.ClassBlock
+        elif n == "define":
+            self.select_block = blocks.DefineBlock
+        elif n == "call":
+            self.select_block = blocks.CallBlock
 
     def on_touch_down(self, touch):
         if "button" in touch.profile:
@@ -64,45 +68,18 @@ class CodeArea(Widget):
     def connect_block(self):
         # 接続の初期化
         for block in self.codes:
-            block.next_block = None
-            block.back_block = None
-
-            if block.status in [BlockStatus.Function, BlockStatus.Nest]:
-                block.elem_block = None
-
-            if block.status == BlockStatus.Nest:
-                block.nest_block = None
+            block.initialize_connect()
 
         # 接続の判定
-        for block1 in self.codes:
-            for block2 in self.codes:
-                if block1 == block2:
+        for block_1 in self.codes:
+            for block_2 in self.codes:
+                if block_1 is block_2:
                     continue
-                block1.connect_block(block2)
+                block_1.connect_block(block_2)
 
-        # 入れ子部の拡大
-        # 悪質なコードだから修正しようね
+        # 接続状況に従い更新
         for block in self.codes:
-            if block.status == BlockStatus.Nest:
-                length = 50
-                nest_block = block.nest_block
-                while nest_block is not None:
-                    length += 50
-                    nest_block = nest_block.next_block
-
-                block.bar.size = (block.bar.size[0], length)
-                block.bar.pos = (block.block_bar_point.x, block.block_bar_point.y - length)
-                block.end.pos = (block.block_bar_point.x, block.block_bar_point.y - length - 50/3)
-
-                from block import Point
-                distance = block.block_end_point - Point(block.end.pos[0], block.end.pos[1])
-                block.block_end_point = Point(block.end.pos[0], block.end.pos[1])
-
-                next_block = block.next_block
-                while next_block is not None:
-                    # ここに入れ子blockに接続されたblockを移動させるコードを書こう
-                    next_block.move(distance.x, distance.y)
-                    next_block = next_block.next_block
+            block.update()
 
     def exec_block(self):
         # すべてのブロックが接続されている
